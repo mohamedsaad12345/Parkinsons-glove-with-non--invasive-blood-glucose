@@ -1,0 +1,89 @@
+#include <Wire.h>
+#include <Adafruit_MotorShield.h>
+#include <Adafruit_PWMServoDriver.h>
+#include <math.h>
+#include "MPU6050.h"
+
+float frequency, level;
+int ir_value = 0;
+int temp = 0;
+
+const int ir_sen = A0; // Replace A0 with the actual pin number for the infrared sensor
+
+Adafruit_MotorShield AFMS = Adafruit_MotorShield();
+Adafruit_DCMotor *motor1 = AFMS.getMotor(1);
+Adafruit_DCMotor *motor2 = AFMS.getMotor(2);
+Adafruit_DCMotor *motor3 = AFMS.getMotor(3);
+Adafruit_DCMotor *motor4 = AFMS.getMotor(4);
+
+const int f_1 = 3;  // Replace with the actual pin number for motor 1
+const int f_2 = 4;  // Replace with the actual pin number for motor 2
+const int f_3 = 5;  // Replace with the actual pin number for motor 3
+const int f_4 = 6;  // Replace with the actual pin number for motor 4
+
+MPU6050 mpu;
+int16_t ax, ay, az;
+int16_t gx, gy, gz;
+
+struct MyData {
+  byte X;
+  byte Y;
+  byte Z;
+};
+
+MyData data;
+
+void setup() {
+  Wire.begin();
+  Serial.begin(9600);
+
+  pinMode(ir_sen, INPUT);
+
+  AFMS.begin();
+
+  mpu.initialize();
+}
+
+void loop() {
+  mpu.getMotion6(&ax, &ay, &az, &gx, &gy, &gz);
+  data.X = map(ax, -17000, 17000, 0, 255); // X axis data
+  data.Y = map(ay, -17000, 17000, 0, 255);
+  data.Z = map(az, -17000, 17000, 0, 255);  // Y axis data
+
+  ir_value = analogRead(ir_sen);
+  level = map(ir_value, 0, 10, 90, 150);
+
+  frequency = abs((sqrt(ax * ax + ay * ay + az * az) - 1.0) * 1000.0);
+
+  Serial.println("=== Sensor Readings ===");
+  Serial.print("Frequency: ");
+  Serial.println(frequency);
+  Serial.print("IR Value: ");
+  Serial.println(ir_value);
+  Serial.print("Level: ");
+  Serial.println(level);
+  Serial.print("Axis X: ");
+  Serial.println(data.X);
+  Serial.print("Axis Y: ");
+  Serial.println(data.Y);
+  Serial.print("Axis Z: ");
+  Serial.println(data.Z);
+
+  motor1->setSpeed(random(100, 255));
+  motor1->run(FORWARD);
+  motor2->setSpeed(random(100, 255));
+  motor2->run(FORWARD);
+  motor3->setSpeed(random(100, 255));
+  motor3->run(FORWARD);
+  motor4->setSpeed(random(100, 255));
+  motor4->run(FORWARD);
+
+  delay(2000);
+
+  motor1->setSpeed(0);
+  motor2->setSpeed(0);
+  motor3->setSpeed(0);
+  motor4->setSpeed(0);
+
+  delay(2000);
+}
